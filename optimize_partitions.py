@@ -8,11 +8,11 @@ import time
 
 # State_space: (min_(downs left/yards_to_reset_downs), max_(downs left/yards_to_reset_downs), min_(yards to score / time left), max_(yards to score / time left))
 TIME_LIMIT = 9
-GAMES_LIMIT = 10
+GAMES_LIMIT = 100
 
 def optimize_specific_partition():
-    x_candidates = np.linspace(3, 15, 100)
-    y_candidates = np.linspace(0.2, 1.5, 100)
+    x_candidates = np.linspace(2, 5, 10)
+    y_candidates = np.linspace(2, 5, 10)
     best_partitions, best_partitions_score = None, 0
     model = NFLStrategy(*game_parameters[0])
 
