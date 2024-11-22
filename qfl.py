@@ -7,7 +7,9 @@ from math import exp
 from typing import List
 
 # Parameters
-EPSILON = 0.2
+EPSILON = 0.25
+MIN_EPSILON = 0.1
+EPISODES_TO_MIN = 1000
 ALPHA = 0.25
 MIN_ALPHA = 0.05
 GAMMA = 1
@@ -36,14 +38,15 @@ def find_partition(state: Tuple[int, int, int, int])  -> Tuple[int, int]:
     state_y = 0 if y <= y_dimension_boundaries[0] else (1 if y <= y_dimension_boundaries[1] else 2)
     return (state_x, state_y)
 
-def epsilon_greedy_action(q: List[List[List[float]]], partition: Tuple[int, int], model: NFLStrategy) -> int:
+def epsilon_greedy_action(q: List[List[List[float]]], partition: Tuple[int, int], model: NFLStrategy, episode: int) -> int:
     """
         Return the best action for the given state using the epsilon-greedy policy.
             q: Q-values for each partition-action pair
             state: [remaining_yards_to_score, downs_left, yards_to_reset_downs, time_left(5-second ticks)]
             epsilon: probability of selecting a random action
     """
-    if random.uniform(0, 1) < EPSILON:
+    decay = max(0, (EPISODES_TO_MIN - episode) / EPISODES_TO_MIN)
+    if random.uniform(0, 1) < max(EPSILON * decay, MIN_EPSILON):
         return random.randint(0, model.offensive_playbook_size() - 1)
     else:
         x, y = partition
@@ -65,12 +68,12 @@ def q_learn(model: NFLStrategy, time_limit: float) -> callable:
         while not model.game_over(current_state):
             partition = find_partition(current_state)
             partition_x, partition_y = partition
-            action = epsilon_greedy_action(q, partition, model)
+            action = epsilon_greedy_action(q, partition, model, episode)
             next_state, reward = model.result(current_state, action)
             alpha_values[partition] = max(alpha_values[partition] * exp(-LAMBDA * partition_stats[partition]), MIN_ALPHA)
             if model.game_over(next_state):
                 # Terminal state
-                reward = 1 if model.win(next_state) else -1
+                reward = 10 if model.win(next_state) else -10
                 q[partition_x][partition_y][action] += alpha_values[partition] * (reward - q[partition_x][partition_y][action]) 
             else:
                 # Non-terminal state
